@@ -1,0 +1,66 @@
+scenario:
+  name: warehouse_3x6
+
+robots:
+  - name: Forklift
+    id: A
+    capabilities: [heavy_lift]
+    max_speed: 100000.0
+    start_position: [0.0, 0.0]
+    
+  - name: Courier
+    id: B
+    capabilities: [transport]
+    max_speed: 100000.0
+    start_position: [0.0, 0.0]
+    
+  - name: Inspector
+    id: C
+    capabilities: [sensor, transport]
+    max_speed: 100000.0
+    start_position: [0.0, 0.0]
+
+tasks:
+  - id: pickup_shelfA
+    location: [0.0, 0.0]
+    duration: 15
+    deadline: 60
+    requires_capability: heavy_lift
+    uses_resources: []
+    
+  - id: pickup_shelfB
+    location: [0.0, 0.0]
+    duration: 18
+    deadline: 90
+    requires_capability: heavy_lift
+    uses_resources: []
+    
+  - id: delivery_packing
+    location: [0.0, 0.0]
+    duration: 20
+    deadline: 100
+    requires_capability: transport
+    uses_resources: []
+    
+  - id: delivery_dock
+    location: [0.0, 0.0]
+    duration: 22
+    deadline: 140
+    requires_capability: transport
+    uses_resources: []
+    
+  - id: quality_inspect
+    location: [0.0, 0.0]
+    duration: 25
+    deadline: 130
+    requires_capability: sensor
+    uses_resources: []
+    
+  - id: battery_charge
+    location: [0.0, 0.0]
+    duration: 30
+    deadline: 150
+    requires_capability: null
+    uses_resources: []
+
+resources: {}

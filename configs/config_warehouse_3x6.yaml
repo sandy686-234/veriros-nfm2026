@@ -1,0 +1,96 @@
+# VeriROS Warehouse Configuration
+# 3 Robots, 6 Tasks, with shared corridor resource
+# This configuration matches the paper's Table 1
+
+scenario:
+  name: warehouse_3x6_realistic
+  description: "Heterogeneous warehouse scenario with shared corridor"
+
+# ============================================
+# ROBOTS - Different capabilities and speeds
+# ============================================
+robots:
+  - name: Forklift
+    id: A
+    capabilities: [heavy_lift]
+    max_speed: 0.5  # Slow but can lift heavy items (m/s)
+    start_position: [0.0, 0.0]
+    
+  - name: Courier
+    id: B
+    capabilities: [transport]
+    max_speed: 0.7  # Fast transport robot (m/s)
+    start_position: [0.0, 2.0]
+    
+  - name: Inspector
+    id: C
+    capabilities: [sensor, transport]
+    max_speed: 0.4  # Slow but has sensing capability (m/s)
+    start_position: [0.0, -2.0]
+
+
+tasks:
+  # Heavy lifting tasks - only Forklift can do these
+  - id: pickup_shelfA
+    description: "Pick up heavy item from Shelf A"
+    location: [5.0, 3.0]
+    duration: 15
+    deadline: 60
+    requires_capability: heavy_lift
+    uses_resources: []
+    
+  - id: pickup_shelfB
+    description: "Pick up heavy item from Shelf B"
+    location: [5.0, -3.0]
+    duration: 18
+    deadline: 90
+    requires_capability: heavy_lift
+    uses_resources: []
+    
+
+  - id: delivery_packing
+    description: "Deliver items to packing area"
+    location: [10.0, 0.0]
+    duration: 20
+    deadline: 100
+    requires_capability: transport
+    uses_resources: [main_corridor]
+    
+  - id: delivery_dock
+    description: "Deliver items to loading dock"
+    location: [15.0, 2.0]
+    duration: 22
+    deadline: 140
+    requires_capability: transport
+    uses_resources: [main_corridor]
+    
+
+  - id: quality_inspect
+    description: "Quality inspection of items"
+    location: [8.0, -2.0]
+    duration: 25
+    deadline: 130
+    requires_capability: sensor
+    uses_resources: []
+    
+
+  - id: battery_charge
+    description: "Battery charging at station"
+    location: [2.0, 0.0]
+    duration: 30
+    deadline: 150
+    requires_capability: null
+    uses_resources: [charging_station]
+
+resources:
+  main_corridor:
+    type: mutex
+    description: "Main corridor - only one robot at a time"
+    rect: [7.0, 12.0, -1.0, 1.0]
+    traversal_time: 10.0
+    
+  charging_station:
+    type: mutex
+    description: "Single charging station"
+    rect: [1.0, 3.0, -1.0, 1.0]
+    traversal_time: 30.0

@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-gate_heterogeneous_scheduler.py
-
-SMT-based heterogeneous multi-robot task scheduler for VeriROS.
-Encodes task allocation as QF_LIRA constraints and solves with Z3.
-
-Outputs schedule.json compatible with executor_schedule_follower.py
-"""
 
 import math
 import time
@@ -24,17 +16,7 @@ except ImportError:
     sys.exit(1)
 
 
-# ==================== CONFIGURATION ====================
-
-EPSILON = 0.1  # Safety margin for resource mutex (seconds)
-RUNS_DIR = "runs"
-SOLVER_TIMEOUT = 120
-
-
-# ==================== CONFIG LOADING ====================
-
 def load_config(config_file):
-    """Load YAML configuration file."""
     config_path = Path(config_file)
     
     if not config_path.exists():
@@ -74,7 +56,6 @@ def load_config(config_file):
 
 
 def build_task_pool(config):
-    """Build task pool from config."""
     task_pool = {}
     tasks = config.get('tasks', [])
     
@@ -102,7 +83,6 @@ def build_task_pool(config):
 
 
 def build_robots(config):
-    """Build robots dict from config."""
     robots = {}
     robot_list = config.get('robots', [])
     
@@ -129,18 +109,16 @@ def build_robots(config):
 
 
 def build_resources(config):
-    """Build resources dict from config."""
     resources = {}
     resource_dict = config.get('resources', {})
     
     if not resource_dict:
-        print("[CONFIG] No shared resources defined")
+        print("[WARNING] No resources in config")
         return resources
     
     for res_name, res_data in resource_dict.items():
         resources[res_name] = {
             "type": res_data.get('type', 'mutex'),
-            "rect": res_data.get('rect', None),
             "location": tuple(res_data.get('location', (0.0, 0.0))),
             "traversal_time": float(res_data.get('traversal_time', 10.0)),
         }
@@ -149,10 +127,12 @@ def build_resources(config):
     return resources
 
 
-# ==================== UTILITIES ====================
+EPSILON = 0.1
+RUNS_DIR = "runs"
+SOLVER_TIMEOUT = 120
+
 
 def compute_travel_time(loc1, loc2, speed):
-    """Compute travel time between two locations."""
     distance = math.hypot(loc2[0] - loc1[0], loc2[1] - loc1[1])
     if speed <= 0:
         return 0.0
@@ -160,8 +140,7 @@ def compute_travel_time(loc1, loc2, speed):
 
 
 def validate_configuration(task_pool, robots):
-    """Validate that all tasks can be assigned to capable robots."""
-    print("[CONFIG] Validating capability constraints...")
+    print("[CONFIG] Validating...")
     
     all_valid = True
     for task_id, task_data in task_pool.items():
@@ -172,36 +151,18 @@ def validate_configuration(task_pool, robots):
                 if req_cap in rdata["capabilities"]
             ]
             if not capable_robots:
-                print(f"[ERROR] Task '{task_id}' requires '{req_cap}', no robot has this capability")
+                print(f"[ERROR] Task '{task_id}' requires '{req_cap}', no robot available")
                 all_valid = False
             else:
                 print(f"  [{req_cap}] {task_id} -> {capable_robots}")
     
     if all_valid:
-        print(f"[CONFIG] Validation passed: {len(task_pool)} tasks, {len(robots)} robots")
+        print(f"[CONFIG] Valid: {len(task_pool)} tasks, {len(robots)} robots")
     return all_valid
 
 
-# ==================== SMT ENCODING ====================
-
 def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
-    """
-    Generate SMT2 encoding for heterogeneous multi-robot task allocation.
-    
-    Constraints:
-    - C1: Each task assigned to exactly one robot
-    - C2: Capability matching (task requirement ⊆ robot capabilities)
-    - C3: Tasks on same robot non-overlapping (with travel time)
-    - C4: Deadline satisfaction
-    - C5: Resource mutual exclusion
-    - C6: Makespan definition
-    
-    Objective: Minimize makespan
-    """
     lines = []
-    lines.append("; VeriROS Heterogeneous Multi-Robot Task Scheduler")
-    lines.append("; SMT2 encoding (QF_LIRA)")
-    lines.append("")
     lines.append("(set-logic QF_LIRA)")
     lines.append("(set-option :produce-models true)")
     lines.append("(set-option :produce-unsat-cores true)")
@@ -211,15 +172,13 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
     task_ids = list(task_pool.keys())
     robot_ids = [r["id"] for r in robots.values()]
     
-    # Declare start time variables
-    lines.append("; === Start time variables ===")
+    lines.append("; Start times")
     for task_id in task_ids:
         lines.append(f"(declare-const s_{task_id} Real)")
         lines.append(f"(assert (>= s_{task_id} 0.0))")
     lines.append("")
     
-    # Declare assignment variables (binary: 0 or 1)
-    lines.append("; === Assignment variables (assign_task_robot) ===")
+    lines.append("; Assignment variables")
     for task_id in task_ids:
         for robot_id in robot_ids:
             var_name = f"assign_{task_id}_{robot_id}"
@@ -227,8 +186,7 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
             lines.append(f"(assert (or (= {var_name} 0) (= {var_name} 1)))")
     lines.append("")
     
-    # Declare ordering variables for tasks on same robot
-    lines.append("; === Ordering variables ===")
+    lines.append("; Ordering variables")
     for robot_id in robot_ids:
         for i, t1 in enumerate(task_ids):
             for t2 in task_ids[i+1:]:
@@ -237,48 +195,40 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
                 lines.append(f"(assert (or (= {var_name} 0) (= {var_name} 1)))")
     lines.append("")
     
-    # Makespan variable
-    lines.append("; === Makespan variable ===")
     lines.append("(declare-const makespan Real)")
     lines.append("(assert (>= makespan 0.0))")
     lines.append("")
     
-    # C1: Each task assigned to exactly one robot
-    lines.append("; === C1: Each task assigned to exactly one robot ===")
+    lines.append("; C1: Each task assigned to exactly one robot")
     for task_id in task_ids:
         assign_vars = [f"assign_{task_id}_{rid}" for rid in robot_ids]
         sum_expr = " ".join(assign_vars)
         lines.append(f"(assert (= (+ {sum_expr}) 1))")
     lines.append("")
     
-    # C2: Capability constraints
-    lines.append("; === C2: Capability matching ===")
+    lines.append("; C2: Capability constraints")
     for task_id, task_data in task_pool.items():
         req_cap = task_data.get("requires_capability")
         if req_cap:
             for robot_name, robot_data in robots.items():
                 robot_id = robot_data["id"]
                 if req_cap not in robot_data["capabilities"]:
-                    lines.append(f"(assert (= assign_{task_id}_{robot_id} 0))  ; {task_id} requires {req_cap}, {robot_name} lacks it")
+                    lines.append(f"(assert (= assign_{task_id}_{robot_id} 0))")
     lines.append("")
     
-    # C3: Tasks on same robot non-overlapping (with travel time)
-    lines.append("; === C3: Non-overlapping tasks on same robot (with travel time) ===")
+    lines.append("; C3: Tasks on same robot non-overlapping")
     for robot_name, robot_data in robots.items():
         robot_id = robot_data["id"]
         robot_speed = robot_data["max_speed"]
         robot_start = robot_data["start_position"]
         
-        # Initial travel time from robot start position
         for task_id, task_data in task_pool.items():
             initial_travel = compute_travel_time(robot_start, task_data["location"], robot_speed)
-            if initial_travel > 0:
-                lines.append(
-                    f"(assert (=> (= assign_{task_id}_{robot_id} 1) "
-                    f"(>= s_{task_id} {initial_travel:.2f})))  ; initial travel for {robot_name}"
-                )
+            lines.append(
+                f"(assert (=> (= assign_{task_id}_{robot_id} 1) "
+                f"(>= s_{task_id} {initial_travel:.2f})))"
+            )
         
-        # Non-overlap between task pairs
         for i, t1 in enumerate(task_ids):
             for t2 in task_ids[i+1:]:
                 t1_data = task_pool[t1]
@@ -287,7 +237,6 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
                 travel_12 = compute_travel_time(t1_data["location"], t2_data["location"], robot_speed)
                 travel_21 = compute_travel_time(t2_data["location"], t1_data["location"], robot_speed)
                 
-                # If order=1: t1 before t2
                 lines.append(
                     f"(assert (=> "
                     f"(and (= assign_{t1}_{robot_id} 1) "
@@ -296,7 +245,6 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
                     f"(>= s_{t2} (+ s_{t1} {t1_data['duration']:.2f} {travel_12:.2f}))))"
                 )
                 
-                # If order=0: t2 before t1
                 lines.append(
                     f"(assert (=> "
                     f"(and (= assign_{t1}_{robot_id} 1) "
@@ -306,16 +254,14 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
                 )
     lines.append("")
     
-    # C4: Deadline constraints
-    lines.append("; === C4: Deadline satisfaction ===")
+    lines.append("; C4: Deadline constraints")
     for task_id, task_data in task_pool.items():
         deadline = task_data["deadline"]
         duration = task_data["duration"]
-        lines.append(f"(assert (<= (+ s_{task_id} {duration:.2f}) {deadline:.2f}))  ; {task_id} deadline")
+        lines.append(f"(assert (<= (+ s_{task_id} {duration:.2f}) {deadline:.2f}))")
     lines.append("")
     
-    # C5: Resource mutual exclusion
-    lines.append("; === C5: Resource mutual exclusion ===")
+    lines.append("; C5: Resource mutual exclusion")
     for res_name, res_data in resources.items():
         users = [tid for tid, tdata in task_pool.items() 
                  if res_name in tdata.get("uses_resources", [])]
@@ -323,7 +269,6 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
         if len(users) < 2:
             continue
         
-        lines.append(f"; Resource: {res_name}")
         for i, t1 in enumerate(users):
             for t2 in users[i+1:]:
                 d1 = task_pool[t1]["duration"]
@@ -332,19 +277,16 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
                 lines.append(
                     f"(assert (or "
                     f"(<= (+ s_{t1} {d1:.2f} {EPSILON:.2f}) s_{t2}) "
-                    f"(<= (+ s_{t2} {d2:.2f} {EPSILON:.2f}) s_{t1})))  ; {t1} vs {t2}"
+                    f"(<= (+ s_{t2} {d2:.2f} {EPSILON:.2f}) s_{t1})))"
                 )
     lines.append("")
     
-    # C6: Makespan definition
-    lines.append("; === C6: Makespan = max completion time ===")
+    lines.append("; C6: Makespan definition")
     for task_id, task_data in task_pool.items():
         duration = task_data["duration"]
         lines.append(f"(assert (>= makespan (+ s_{task_id} {duration:.2f})))")
     lines.append("")
     
-    # Objective: minimize makespan
-    lines.append("; === Objective: minimize makespan ===")
     lines.append("(minimize makespan)")
     lines.append("")
     lines.append("(check-sat)")
@@ -355,10 +297,7 @@ def export_smt2_heterogeneous(task_pool, robots, resources, output_path):
     return output_path
 
 
-# ==================== Z3 SOLVER ====================
-
 def run_z3_solver(smt2_path, timeout=120):
-    """Run Z3 solver on SMT2 file."""
     try:
         result = subprocess.run(
             ["z3", f"-T:{timeout}", "-smt2", str(smt2_path)],
@@ -376,7 +315,6 @@ def run_z3_solver(smt2_path, timeout=120):
 
 
 def parse_z3_result(z3_output, task_pool, robots):
-    """Parse Z3 output and extract schedule."""
     import re
     from fractions import Fraction
 
@@ -389,7 +327,6 @@ def parse_z3_result(z3_output, task_pool, robots):
 
     def _parse_num(token: str):
         token = token.strip()
-        # Handle (/ num den) format
         m = re.match(r'\(\s*/\s*([^\s\)]+)\s+([^\s\)]+)\s*\)', token)
         if m:
             try:
@@ -408,14 +345,12 @@ def parse_z3_result(z3_output, task_pool, robots):
         except Exception:
             return None
 
-    # Parse (define-fun ...) format
     for m in re.finditer(r'\(define-fun\s+([^\s\)]+)\s*\(\)\s*\w+\s*([^\)]+)\)', z3_output, re.DOTALL):
         name = m.group(1)
         val_str = m.group(2).strip()
         parsed = _parse_num(val_str)
         values[name] = parsed if parsed is not None else val_str
 
-    # Parse (name value) pairs after "sat"
     after_sat = z3_output.split("sat", 1)[-1]
     pairs = re.findall(r'\(\s*([a-zA-Z0-9_]+)\s+([^\)\s]+)\s*\)', after_sat)
     for name, val in pairs:
@@ -426,7 +361,6 @@ def parse_z3_result(z3_output, task_pool, robots):
     
     makespan = values.get("makespan", None)
     
-    # Extract task assignments
     task_assignments = {}
     for task_id in task_pool.keys():
         for robot_name, robot_data in robots.items():
@@ -436,16 +370,12 @@ def parse_z3_result(z3_output, task_pool, robots):
                 task_assignments[task_id] = robot_id
                 break
     
-    # Extract start times
     start_times = {}
     for task_id in task_pool.keys():
         start_var = f"s_{task_id}"
         start_times[task_id] = values.get(start_var, 0.0)
     
-    # Build schedule by robot NAME (for display) and by robot ID (for executor)
-    schedule_by_name = {}
-    schedule_by_id = {}
-    
+    schedule = {}
     for robot_name, robot_data in robots.items():
         robot_id = robot_data["id"]
         robot_tasks = []
@@ -453,59 +383,42 @@ def parse_z3_result(z3_output, task_pool, robots):
         for task_id, assigned_robot in task_assignments.items():
             if assigned_robot == robot_id:
                 task_data = task_pool[task_id]
-                task_entry = {
+                robot_tasks.append({
                     "task_id": task_id,
                     "description": task_data.get("description", task_id),
                     "start_time": start_times[task_id],
                     "duration": task_data["duration"],
                     "end_time": start_times[task_id] + task_data["duration"],
                     "location": task_data["location"],
-                    "goal": task_data["location"],  # Alias for executor compatibility
-                    "uses_resources": task_data.get("uses_resources", []),
-                }
-                robot_tasks.append(task_entry)
+                })
         
         robot_tasks.sort(key=lambda t: t["start_time"])
-        schedule_by_name[robot_name] = robot_tasks
-        schedule_by_id[robot_id] = robot_tasks
+        schedule[robot_name] = robot_tasks
     
     return {
         "makespan": makespan,
         "task_assignments": task_assignments,
         "start_times": start_times,
-        "schedule": schedule_by_name,      # By robot name (Forklift, Courier, ...)
-        "schedules": schedule_by_id,       # By robot ID (A, B, C, ...) - for executor
+        "schedule": schedule,
     }
 
 
-# ==================== OUTPUT ====================
-
 def export_schedule_json(result, task_pool, robots, resources, run_dir):
-    """Export schedule to JSON file (compatible with executor)."""
     output = {
         "timestamp": time.time(),
         "makespan": result["makespan"],
         "task_assignments": result["task_assignments"],
-        "schedule": result["schedule"],      # By robot name
-        "schedules": result["schedules"],    # By robot ID (for executor)
-        "task_pool": {tid: {
-            "location": list(tdata["location"]),
-            "duration": tdata["duration"],
-            "deadline": tdata["deadline"],
-            "requires_capability": tdata.get("requires_capability"),
-            "uses_resources": tdata.get("uses_resources", []),
-        } for tid, tdata in task_pool.items()},
+        "schedule": result["schedule"],
+        "task_pool": task_pool,
         "robots": {name: {
             "id": data["id"],
             "capabilities": data["capabilities"],
-            "max_speed": data["max_speed"],
-            "start_position": list(data["start_position"]),
+            "max_speed": data["max_speed"]
         } for name, data in robots.items()},
         "resources": resources,
     }
     
-    # Save as schedule.json (standard name for executor)
-    output_path = run_dir / "schedule.json"
+    output_path = run_dir / "schedule_heterogeneous.json"
     output_path.write_text(json.dumps(output, indent=2))
     print(f"[EXPORT] Saved -> {output_path}")
     
@@ -513,7 +426,6 @@ def export_schedule_json(result, task_pool, robots, resources, run_dir):
 
 
 def print_schedule_summary(result, robots):
-    """Print human-readable schedule summary."""
     print("\n" + "="*70)
     print("HETEROGENEOUS TASK ALLOCATION RESULT")
     print("="*70)
@@ -529,7 +441,7 @@ def print_schedule_summary(result, robots):
                     makespan_val = float(makespan_val)
             else:
                 makespan_val = float(makespan_val)
-            print(f"Optimal Makespan: {makespan_val:.2f}s")
+            print(f"Makespan: {makespan_val:.2f}s")
         except (ValueError, TypeError):
             print(f"Makespan: {makespan_val}")
     else:
@@ -540,7 +452,7 @@ def print_schedule_summary(result, robots):
     for robot_name, tasks in result["schedule"].items():
         robot_data = robots[robot_name]
         print(f"Robot {robot_data['id']} ({robot_name}):")
-        print(f"  Capabilities: {', '.join(robot_data['capabilities']) or 'none'}")
+        print(f"  Capabilities: {', '.join(robot_data['capabilities'])}")
         print(f"  Max Speed: {robot_data['max_speed']} m/s")
         print(f"  Tasks: {len(tasks)}")
         
@@ -553,57 +465,49 @@ def print_schedule_summary(result, robots):
                 except (ValueError, TypeError):
                     time_str = f"[{task['start_time']} - {task['end_time']}]"
                 
-                loc = task.get('location', task.get('goal', (0, 0)))
-                print(f"    {task['task_id']}: {time_str} @ ({loc[0]:.1f}, {loc[1]:.1f})")
+                print(f"    {task['task_id']}: {time_str}")
         print("")
 
 
-# ==================== MAIN ====================
-
 def main():
-    parser = argparse.ArgumentParser(description="VeriROS Heterogeneous Multi-Robot Task Scheduler")
+    parser = argparse.ArgumentParser(description="Heterogeneous Multi-Robot Task Scheduler")
     parser.add_argument("--config", default="config_warehouse_3x6.yaml", help="Config file")
     parser.add_argument("--timeout", type=int, default=120, help="Z3 timeout (seconds)")
     
     args = parser.parse_args()
     
     print("="*70)
-    print("VeriROS: SMT-Based Heterogeneous Multi-Robot Task Scheduler")
+    print("Heterogeneous Multi-Robot Task Scheduler (SMT)")
     print("="*70)
     print("")
     
-    # Load configuration
     config = load_config(args.config)
+    
     task_pool = build_task_pool(config)
     robots = build_robots(config)
     resources = build_resources(config)
     
     print("")
     
-    # Validate
     if not validate_configuration(task_pool, robots):
         sys.exit(1)
     print("")
     
-    # Create run directory
     run_dir = Path(RUNS_DIR) / time.strftime("%Y%m%d-%H%M%S")
     run_dir.mkdir(parents=True, exist_ok=True)
     
-    # Save config
     config_export = {
-        "task_pool": {k: {**v, "location": list(v["location"])} for k, v in task_pool.items()},
-        "robots": {k: {**v, "start_position": list(v["start_position"])} for k, v in robots.items()},
+        "task_pool": task_pool,
+        "robots": robots,
         "resources": resources,
     }
     (run_dir / "config.json").write_text(json.dumps(config_export, indent=2))
     
-    # Generate SMT2
     print("[SMT] Generating SMT2 encoding...")
     smt2_path = run_dir / "heterogeneous.smt2"
     export_smt2_heterogeneous(task_pool, robots, resources, smt2_path)
     print("")
     
-    # Run Z3
     print(f"[Z3] Running solver (timeout={args.timeout}s)...")
     solve_start = time.time()
     z3_ok, z3_output = run_z3_solver(smt2_path, timeout=args.timeout)
@@ -622,11 +526,9 @@ def main():
     print("")
     
     if first_line.strip() != "sat":
-        print("[RESULT] UNSAT - No feasible schedule exists")
-        print("[HINT] Consider relaxing deadlines or adding more capable robots")
+        print("[RESULT] UNSAT - No feasible schedule")
         return False
     
-    # Parse result
     print("[PARSE] Extracting schedule...")
     result = parse_z3_result(z3_output, task_pool, robots)
     
@@ -634,13 +536,10 @@ def main():
         print("[ERROR] Failed to parse Z3 output")
         return False
     
-    # Export
     export_schedule_json(result, task_pool, robots, resources, run_dir)
     
-    # Print summary
     print_schedule_summary(result, robots)
     
-    # Statistics
     print("="*70)
     print("STATISTICS")
     print("="*70)
@@ -662,12 +561,9 @@ def main():
     
     print("\nLoad distribution:")
     for robot_name, tasks in result["schedule"].items():
-        robot_id = robots[robot_name]["id"]
-        print(f"  {robot_name} (ID: {robot_id}): {len(tasks)} tasks")
+        print(f"  {robot_name}: {len(tasks)}")
     
     print(f"\n[SUCCESS] Results saved to: {run_dir}")
-    print(f"\nTo run executor:")
-    print(f"  python executor_schedule_follower.py  # (will auto-load latest schedule)")
     print("")
     
     return True

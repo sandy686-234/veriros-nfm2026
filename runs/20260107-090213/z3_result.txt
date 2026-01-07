@@ -1,0 +1,143 @@
+sat
+(
+  (define-fun order_pickup_shelfA_battery_charge_A () Int
+    1)
+  (define-fun order_pickup_shelfB_delivery_packing_B () Int
+    1)
+  (define-fun order_pickup_shelfB_battery_charge_C () Int
+    0)
+  (define-fun s_battery_charge () Real
+    0.0)
+  (define-fun order_pickup_shelfA_pickup_shelfB_A () Int
+    0)
+  (define-fun order_pickup_shelfB_delivery_packing_A () Int
+    0)
+  (define-fun order_pickup_shelfB_quality_inspect_A () Int
+    0)
+  (define-fun order_delivery_dock_battery_charge_C () Int
+    0)
+  (define-fun order_pickup_shelfA_delivery_dock_A () Int
+    0)
+  (define-fun order_pickup_shelfB_delivery_dock_A () Int
+    0)
+  (define-fun order_pickup_shelfA_battery_charge_C () Int
+    0)
+  (define-fun assign_delivery_dock_C () Int
+    1)
+  (define-fun makespan () Real
+    50.0)
+  (define-fun order_pickup_shelfA_quality_inspect_A () Int
+    1)
+  (define-fun order_delivery_packing_delivery_dock_A () Int
+    0)
+  (define-fun order_quality_inspect_battery_charge_B () Int
+    0)
+  (define-fun order_delivery_dock_battery_charge_A () Int
+    0)
+  (define-fun order_pickup_shelfA_delivery_packing_A () Int
+    0)
+  (define-fun assign_battery_charge_C () Int
+    0)
+  (define-fun order_delivery_dock_battery_charge_B () Int
+    1)
+  (define-fun s_delivery_packing () Real
+    30.0)
+  (define-fun assign_delivery_packing_C () Int
+    0)
+  (define-fun order_delivery_packing_battery_charge_C () Int
+    0)
+  (define-fun order_delivery_packing_delivery_dock_C () Int
+    0)
+  (define-fun order_quality_inspect_battery_charge_C () Int
+    0)
+  (define-fun s_delivery_dock () Real
+    0.0)
+  (define-fun order_pickup_shelfA_delivery_packing_C () Int
+    0)
+  (define-fun order_delivery_packing_quality_inspect_C () Int
+    1)
+  (define-fun s_pickup_shelfA () Real
+    29.0)
+  (define-fun order_quality_inspect_battery_charge_A () Int
+    1)
+  (define-fun order_pickup_shelfB_delivery_packing_C () Int
+    0)
+  (define-fun order_pickup_shelfB_quality_inspect_C () Int
+    0)
+  (define-fun assign_battery_charge_B () Int
+    1)
+  (define-fun order_pickup_shelfA_delivery_dock_B () Int
+    0)
+  (define-fun order_pickup_shelfA_pickup_shelfB_C () Int
+    0)
+  (define-fun order_delivery_packing_quality_inspect_B () Int
+    0)
+  (define-fun order_pickup_shelfA_pickup_shelfB_B () Int
+    1)
+  (define-fun order_pickup_shelfA_battery_charge_B () Int
+    0)
+  (define-fun order_delivery_packing_delivery_dock_B () Int
+    0)
+  (define-fun order_pickup_shelfB_quality_inspect_B () Int
+    0)
+  (define-fun order_delivery_dock_quality_inspect_A () Int
+    1)
+  (define-fun order_pickup_shelfA_delivery_dock_C () Int
+    0)
+  (define-fun s_quality_inspect () Real
+    25.0)
+  (define-fun order_delivery_packing_battery_charge_B () Int
+    0)
+  (define-fun s_pickup_shelfB () Real
+    11.0)
+  (define-fun order_delivery_packing_battery_charge_A () Int
+    0)
+  (define-fun order_delivery_dock_quality_inspect_C () Int
+    1)
+  (define-fun order_pickup_shelfA_quality_inspect_B () Int
+    0)
+  (define-fun order_pickup_shelfB_battery_charge_A () Int
+    1)
+  (define-fun order_pickup_shelfB_delivery_dock_C () Int
+    0)
+  (define-fun order_pickup_shelfA_delivery_packing_B () Int
+    0)
+  (define-fun order_pickup_shelfB_delivery_dock_B () Int
+    0)
+  (define-fun order_pickup_shelfB_battery_charge_B () Int
+    0)
+  (define-fun order_delivery_dock_quality_inspect_B () Int
+    0)
+  (define-fun order_pickup_shelfA_quality_inspect_C () Int
+    1)
+  (define-fun order_delivery_packing_quality_inspect_A () Int
+    0)
+  (define-fun assign_pickup_shelfB_C () Int
+    0)
+  (define-fun assign_pickup_shelfA_C () Int
+    0)
+  (define-fun assign_delivery_dock_A () Int
+    0)
+  (define-fun assign_delivery_dock_B () Int
+    0)
+  (define-fun assign_quality_inspect_C () Int
+    1)
+  (define-fun assign_pickup_shelfA_B () Int
+    0)
+  (define-fun assign_quality_inspect_A () Int
+    0)
+  (define-fun assign_quality_inspect_B () Int
+    0)
+  (define-fun assign_pickup_shelfA_A () Int
+    1)
+  (define-fun assign_pickup_shelfB_A () Int
+    1)
+  (define-fun assign_pickup_shelfB_B () Int
+    0)
+  (define-fun assign_battery_charge_A () Int
+    0)
+  (define-fun assign_delivery_packing_B () Int
+    1)
+  (define-fun assign_delivery_packing_A () Int
+    0)
+)

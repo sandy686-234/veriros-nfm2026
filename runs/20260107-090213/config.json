@@ -1,0 +1,110 @@
+{
+  "task_pool": {
+    "pickup_shelfA": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 15.0,
+      "deadline": 60.0,
+      "requires_capability": "heavy_lift",
+      "uses_resources": [],
+      "description": "pickup_shelfA"
+    },
+    "pickup_shelfB": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 18.0,
+      "deadline": 90.0,
+      "requires_capability": "heavy_lift",
+      "uses_resources": [],
+      "description": "pickup_shelfB"
+    },
+    "delivery_packing": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 20.0,
+      "deadline": 100.0,
+      "requires_capability": "transport",
+      "uses_resources": [],
+      "description": "delivery_packing"
+    },
+    "delivery_dock": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 22.0,
+      "deadline": 140.0,
+      "requires_capability": "transport",
+      "uses_resources": [],
+      "description": "delivery_dock"
+    },
+    "quality_inspect": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 25.0,
+      "deadline": 130.0,
+      "requires_capability": "sensor",
+      "uses_resources": [],
+      "description": "quality_inspect"
+    },
+    "battery_charge": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 30.0,
+      "deadline": 150.0,
+      "requires_capability": null,
+      "uses_resources": [],
+      "description": "battery_charge"
+    }
+  },
+  "robots": {
+    "Forklift": {
+      "id": "A",
+      "capabilities": [
+        "heavy_lift"
+      ],
+      "max_speed": 100000.0,
+      "start_position": [
+        0.0,
+        0.0
+      ],
+      "description": "Forklift"
+    },
+    "Courier": {
+      "id": "B",
+      "capabilities": [
+        "transport"
+      ],
+      "max_speed": 100000.0,
+      "start_position": [
+        0.0,
+        0.0
+      ],
+      "description": "Courier"
+    },
+    "Inspector": {
+      "id": "C",
+      "capabilities": [
+        "sensor",
+        "transport"
+      ],
+      "max_speed": 100000.0,
+      "start_position": [
+        0.0,
+        0.0
+      ],
+      "description": "Inspector"
+    }
+  },
+  "resources": {}
+}

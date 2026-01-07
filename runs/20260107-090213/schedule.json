@@ -1,0 +1,179 @@
+{
+  "timestamp": 1767776533.677154,
+  "makespan": 50.0,
+  "task_assignments": {
+    "pickup_shelfA": "A",
+    "pickup_shelfB": "A",
+    "delivery_packing": "B",
+    "delivery_dock": "C",
+    "quality_inspect": "C",
+    "battery_charge": "B"
+  },
+  "schedule": {
+    "Forklift": [
+      {
+        "task_id": "pickup_shelfB",
+        "description": "pickup_shelfB",
+        "start_time": 11.0,
+        "duration": 18.0,
+        "end_time": 29.0,
+        "location": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "task_id": "pickup_shelfA",
+        "description": "pickup_shelfA",
+        "start_time": 29.0,
+        "duration": 15.0,
+        "end_time": 44.0,
+        "location": [
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "Courier": [
+      {
+        "task_id": "battery_charge",
+        "description": "battery_charge",
+        "start_time": 0.0,
+        "duration": 30.0,
+        "end_time": 30.0,
+        "location": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "task_id": "delivery_packing",
+        "description": "delivery_packing",
+        "start_time": 30.0,
+        "duration": 20.0,
+        "end_time": 50.0,
+        "location": [
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "Inspector": [
+      {
+        "task_id": "delivery_dock",
+        "description": "delivery_dock",
+        "start_time": 0.0,
+        "duration": 22.0,
+        "end_time": 22.0,
+        "location": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "task_id": "quality_inspect",
+        "description": "quality_inspect",
+        "start_time": 25.0,
+        "duration": 25.0,
+        "end_time": 50.0,
+        "location": [
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  "task_pool": {
+    "pickup_shelfA": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 15.0,
+      "deadline": 60.0,
+      "requires_capability": "heavy_lift",
+      "uses_resources": [],
+      "description": "pickup_shelfA"
+    },
+    "pickup_shelfB": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 18.0,
+      "deadline": 90.0,
+      "requires_capability": "heavy_lift",
+      "uses_resources": [],
+      "description": "pickup_shelfB"
+    },
+    "delivery_packing": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 20.0,
+      "deadline": 100.0,
+      "requires_capability": "transport",
+      "uses_resources": [],
+      "description": "delivery_packing"
+    },
+    "delivery_dock": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 22.0,
+      "deadline": 140.0,
+      "requires_capability": "transport",
+      "uses_resources": [],
+      "description": "delivery_dock"
+    },
+    "quality_inspect": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 25.0,
+      "deadline": 130.0,
+      "requires_capability": "sensor",
+      "uses_resources": [],
+      "description": "quality_inspect"
+    },
+    "battery_charge": {
+      "location": [
+        0.0,
+        0.0
+      ],
+      "duration": 30.0,
+      "deadline": 150.0,
+      "requires_capability": null,
+      "uses_resources": [],
+      "description": "battery_charge"
+    }
+  },
+  "robots": {
+    "Forklift": {
+      "id": "A",
+      "capabilities": [
+        "heavy_lift"
+      ],
+      "max_speed": 100000.0
+    },
+    "Courier": {
+      "id": "B",
+      "capabilities": [
+        "transport"
+      ],
+      "max_speed": 100000.0
+    },
+    "Inspector": {
+      "id": "C",
+      "capabilities": [
+        "sensor",
+        "transport"
+      ],
+      "max_speed": 100000.0
+    }
+  },
+  "resources": {}
+}
