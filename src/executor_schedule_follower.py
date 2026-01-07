@@ -3,11 +3,6 @@
 """
 executor_schedule_follower.py
 
-Schedule-following executor (导师要求版本).
-This is a cleaned-up version of the original file with proper indentation
-and a runnable `main()` entrypoint.
-"""
-
 import math, time, csv, json
 from pathlib import Path
 
